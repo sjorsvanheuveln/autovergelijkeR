@@ -1,6 +1,16 @@
 ##### Marktplaats Auto Vergelijker #####
 # Vergelijkt de auto's aan de hand van features op basis van de opgegeven query.
 
+#### Search Parameters ####
+dist = '100000' #in meters, quotations are required
+max_year = 2016
+min_year = 2009
+min_mileage = 10000
+max_mileage = 150000
+min_price = 1000
+max_price = 5000
+postcode = '1064EW'
+
 #### Functions ####
 simpleCap <- function(x) {
   #makes the first letter of a string to capital
@@ -11,7 +21,7 @@ simpleCap <- function(x) {
 trim <- function(x) {gsub("^\\s+|\\s+$", "", x)}
 get_n_results <- function(bedrijf) {
   #return the number of total results of query
-  query = make_query(1,bedrijf)
+  query = make_query(1,bedrijf,dist,min_year,max_year,min_price,max_price,min_mileage,max_mileage,postcode)
   results = read_html(query)
   results_tag = 'div.mp-Card-body'
   html_fields <- results %>% html_nodes(results_tag)
@@ -88,16 +98,17 @@ get_page_df <- function(query){
   row.names(data) <- NULL
   return(data)
 }
-make_query <- function(i,bedrijf) {
+make_query <- function(i,bedrijf,dist,min_year,max_year,min_price,max_price,min_mileage,max_mileage,postcode) {
   #change query for page number 'i'
+  
   if (bedrijf == T){
-    query = paste('http://www.marktplaats.nl/z.html?attributes=S%2C10898&attributes=S%2C10899&attributes=S%2C10882&attributes=N%2C189&attributes=N%2C190&attributes=N%2C191&attributes=S%2C481&priceFrom=1.000%2C00&priceTo=5.000%2C00&yearFrom=2006&yearTo=2016&mileageFrom=10.000&mileageTo=150.000&categoryId=91&postcode=1064EW&distance=50000&currentPage=',i,'&numberOfResultsPerPage=100',sep='')}
-  else {query = paste('http://www.marktplaats.nl/z.html?attributes=S%2C10898&attributes=S%2C10882&attributes=N%2C189&attributes=N%2C190&attributes=N%2C191&attributes=S%2C481&priceFrom=1.000%2C00&priceTo=5.000%2C00&yearFrom=2006&yearTo=2016&mileageFrom=10.000&mileageTo=150.000&categoryId=91&postcode=1064EW&distance=50000&currentPage=',i,'&numberOfResultsPerPage=100',sep='')}
+    query = paste('http://www.marktplaats.nl/z.html?attributes=S%2C10898&attributes=S%2C10899&attributes=S%2C10882&attributes=N%2C189&attributes=N%2C190&attributes=N%2C191&attributes=S%2C481&priceFrom=',min_price,'%2C00&priceTo=',max_price,'%2C00&yearFrom=',min_year,'&yearTo=',max_year,'&mileageFrom=',min_mileage,'&mileageTo=',max_mileage,'&categoryId=91&postcode=',postcode,'&distance=',dist,'&currentPage=',i,'&numberOfResultsPerPage=100',sep='')
+  }else {query = paste('http://www.marktplaats.nl/z.html?attributes=S%2C10898&attributes=S%2C10882&attributes=N%2C189&attributes=N%2C190&attributes=N%2C191&attributes=S%2C481&priceFrom=',min_price,'%2C00&priceTo=',max_price,'%2C00&yearFrom=',min_year,'&yearTo=',max_year,'&mileageFrom=',min_mileage,'&mileageTo=',max_mileage,'&categoryId=91&postcode=',postcode,'&distance=',dist,'&currentPage=',i,'&numberOfResultsPerPage=100',sep='')}
   return(query)
 } #pas hier de zoekterm aan
 make_df <- function(n,j,bedrijf) {
   for (i in 1:j){
-    query = make_query(i,bedrijf)
+    query = make_query(i,bedrijf,dist,min_year,max_year,min_price,max_price,min_mileage,max_mileage,postcode)
     new_data = get_page_df(query)
     if (i == 1){data = new_data}
     else {data = rbind(data,new_data)}
@@ -109,13 +120,13 @@ make_df <- function(n,j,bedrijf) {
 #### Setup ####
 library(rvest)
 library(XML)
-bedrijf = T #include auto's from a bedrijf seller
+bedrijf = F #include auto's from a bedrijf seller
 n = get_n_results(bedrijf) #number of results
 j = ceiling(n/100) #number of pages contained by results
 
 #### MAIN ####
 data <- make_df(n,j,bedrijf)
-data <- data[with(data, order(-data$Bargain)), ]
+data <- data[with(data, order(-data$Bargain)), ]; row.names(data) <- NULL
 rm(list=setdiff(ls(), "data"))
 
 
