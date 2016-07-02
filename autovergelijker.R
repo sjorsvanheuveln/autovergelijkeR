@@ -2,14 +2,16 @@
 # Vergelijkt de auto's aan de hand van features op basis van de opgegeven query.
 
 #### Search Parameters ####
+#edit these fields to specify the query
 dist = '100000' #in meters, quotations are required
-max_year = 2016
+max_year = 2016 
 min_year = 2009
-min_mileage = 10000
-max_mileage = 150000
-min_price = 1000
-max_price = 5000
+min_mileage = 20000 #in km
+max_mileage = 150000 #in km
+min_price = 2000 #in euro
+max_price = 5000 #in euro
 postcode = '1064EW'
+bedrijf = F #include auto's from a bedrijf seller
 
 #### Functions ####
 simpleCap <- function(x) {
@@ -28,6 +30,7 @@ get_n_results <- function(bedrijf) {
   results = xml_text(html_fields)[1]
   results_index = unlist(gregexpr('[0-9]',results))
   n = as.numeric(substr(results,results_index[1],results_index[length(results_index)]))
+  n = as.numeric(gsub('\\.','',n)) #needed as MP returns values over 1k with '.'
   return(n)
 }
 get_page_df <- function(query){
@@ -63,7 +66,7 @@ get_page_df <- function(query){
   #parse bouwjaar & mileage
   info_tag <- 'span.mp-listing-attributes'
   html_fields <- page %>%  html_nodes(info_tag)
-  age <- as.numeric(unlist(strsplit(date(),' '))[5]) -  as.numeric(xml_text(html_fields)[seq(1,length(distance)*2,2)])
+  age <- as.numeric(format(Sys.Date(),'%Y')) -  as.numeric(xml_text(html_fields)[seq(1,length(distance)*2,2)])
   mileage <- xml_text(html_fields)[seq(2,length(distance)*2,2)]
   mileage <- sapply(mileage,function(x){x = substr(x,1,nchar(x)-3)}) #remove km
   mileage <- gsub('\\.','',mileage)
@@ -108,6 +111,7 @@ make_query <- function(i,bedrijf,dist,min_year,max_year,min_price,max_price,min_
 } #pas hier de zoekterm aan
 make_df <- function(n,j,bedrijf) {
   for (i in 1:j){
+    #print(i)
     query = make_query(i,bedrijf,dist,min_year,max_year,min_price,max_price,min_mileage,max_mileage,postcode)
     new_data = get_page_df(query)
     if (i == 1){data = new_data}
@@ -120,7 +124,6 @@ make_df <- function(n,j,bedrijf) {
 #### Setup ####
 library(rvest)
 library(XML)
-bedrijf = F #include auto's from a bedrijf seller
 n = get_n_results(bedrijf) #number of results
 j = ceiling(n/100) #number of pages contained by results
 
@@ -129,6 +132,8 @@ data <- make_df(n,j,bedrijf)
 data <- data[with(data, order(-data$Bargain)), ]; row.names(data) <- NULL
 rm(list=setdiff(ls(), "data"))
 
+#### Filter ####
+filter_data <- data[grepl('Fiat|Panda|fiat|panda',data$Title),]
 
 #### Plot ####
 plot(data$Age,data$Mileage)
