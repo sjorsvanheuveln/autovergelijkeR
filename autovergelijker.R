@@ -1,5 +1,6 @@
-##### Marktplaats Auto Vergelijker #####
-# Vergelijkt de auto's aan de hand van features op basis van de opgegeven query.
+##### Dutch eBay Car Comparer #####
+# Compares cars on Marktplaats.nl (the Dutch eBay) by personalized queries.
+# The final dataframe carries the column 'Bargain' that indicates whether your car has good relative mileage, age and price within the search query.
 
 #### Search Parameters ####
 #edit these fields to specify the query
@@ -11,7 +12,7 @@ max_mileage = 150000 #in km
 min_price = 2000 #in euro
 max_price = 5000 #in euro
 postcode = '1064EW'
-bedrijf = F #include auto's from a bedrijf seller
+bedrijf = F #include cars from a bedrijf (company) seller
 
 #### Functions ####
 simpleCap <- function(x) {
